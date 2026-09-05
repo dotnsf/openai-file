@@ -32,4 +32,4 @@ This code is licensed under MIT.
 
 ## Copyright
 
-2025 [K.Kimura @ Juge.Me](https://github.com/dotnsf) all rights reserved.
+2026 [K.Kimura @ Juge.Me](https://github.com/dotnsf) all rights reserved.

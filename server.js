@@ -10,6 +10,7 @@ const __dirname = path.dirname(__filename);
 import express from "express";
 import multer from "multer";
 import OpenAI from "openai";
+import fs from "fs";
 
 const app = express();
 
@@ -133,6 +134,10 @@ app.post("/api/completion", (req, res) => {
 
       const response = await openai.responses.create(request);
 
+      if (req.file) {
+        fs.unlinkSync( req.file.path );
+      }
+
       /*
        * OpenAI SDKが返したResponses APIのレスポンスオブジェクトを
        * 抽出・変換せず、そのままJSONとして返す。
@@ -150,6 +155,9 @@ app.post("/api/completion", (req, res) => {
 function createTextOnlyRequest(prompt, previousResponseId) {
   const request = {
     model: "gpt-5-mini",
+    tools: [
+      { type: "web_search" }
+    ],
     input: prompt,
     store: true
   };
@@ -166,7 +174,9 @@ function createRequestWithFile(prompt, file, previousResponseId) {
 
   const request = {
     model: "gpt-5-mini",
-    store: true,
+    tools: [
+      { type: "web_search" }
+    ],
     input: [
         {
             role: "user",
@@ -182,7 +192,8 @@ function createRequestWithFile(prompt, file, previousResponseId) {
                 }
             ]
         }
-    ]
+    ],
+    store: true
   };
   if( previousResponseId ) {
     request.previous_response_id = previousResponseId;

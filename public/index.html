@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Chat</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">AI ASSISTANT</p>
+        <h1>AI Chat</h1>
+      </div>
+      <button id="newChatButton" class="button button-secondary" type="button">新しいチャット</button>
+    </header>
+
+    <section id="chatMessages" class="chat-messages" aria-live="polite" aria-label="チャット履歴">
+      <div id="welcomeMessage" class="welcome-card">
+        <span class="welcome-icon">✦</span>
+        <h2>どのようなことをお手伝いしましょうか？</h2>
+        <p>メッセージを入力し、必要に応じてファイルを添付してください。</p>
+      </div>
+    </section>
+
+    <section class="composer" aria-label="メッセージ入力">
+      <label class="sr-only" for="promptInput">チャットメッセージ</label>
+      <textarea id="promptInput" rows="3" placeholder="メッセージを入力してください..." autocomplete="off"></textarea>
+
+      <div id="fileStatus" class="file-status" hidden>
+        <span aria-hidden="true">📎</span>
+        <span id="fileName"></span>
+      </div>
+
+      <div class="composer-actions">
+        <div class="file-actions">
+          <input id="fileInput" type="file" hidden>
+          <button id="attachButton" class="button button-secondary" type="button">ファイル添付</button>
+          <button id="clearFileButton" class="button button-ghost" type="button" disabled>ファイルクリア</button>
+        </div>
+        <button id="sendButton" class="button button-primary" type="button">送信</button>
+      </div>
+      <p class="hint">Enter で送信、Shift + Enter で改行</p>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

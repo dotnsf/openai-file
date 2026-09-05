@@ -1,0 +1,87 @@
+swagger: '2.0'
+info:
+  description: OpenAI API ドキュメント
+  version: 0.0.1
+  title: OpenAI API REST APIs
+#host: urapi.herokuapp.com
+basePath: /api
+tags:
+  - name: openai
+    description: OpenAI API
+schemes:
+  - http
+  - https
+paths:
+  /ping:
+    get:
+      tags:
+        - openai
+      summary: ping
+      description: ping(test)
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: 成功
+        '400':
+          description: エラー
+  /models:
+    get:
+      tags:
+        - openai
+      summary: Models API
+      description: Retrieve Models
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: 成功
+        '400':
+          description: エラー
+  /model/{id}:
+    get:
+      tags:
+        - openai
+      summary: Retrieve Model API
+      description: Retrieve Model
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          type: string
+      responses:
+        '200':
+          description: 成功
+        '400':
+          description: エラー
+  /completion:
+    post:
+      tags:
+        - openai
+      summary: Analyse with file
+      description: Analyse with file
+      consumes:
+        - multipart/form-data
+      produces:
+        - application/json
+      parameters:
+        - name: prompt
+          in: formData
+          type: string
+          description: 指示プロンプト
+        - name: file
+          in: formData
+          type: file
+          description: ファイル
+        - name: previous_response_id
+          in: formData
+          type: string
+          description: 前回のレスポンスID
+      responses:
+        '200':
+          description: 成功
+        '400':
+          description: エラー
+        '429':
+          description: Too many requests

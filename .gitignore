@@ -1,0 +1,5 @@
+node_modules/
+.memo.txt
+package-lock.json
+.env.*
+!.gitkeep

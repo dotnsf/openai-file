@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:3000/api/completion";
+const API_URL = "/api/completion";
 
 const chatMessages = document.getElementById("chatMessages");
 const welcomeMessage = document.getElementById("welcomeMessage");

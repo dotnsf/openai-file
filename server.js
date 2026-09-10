@@ -30,6 +30,8 @@ const openai = new OpenAI({
   apiKey: process.env.API_KEY
 });
 
+const llmModel = ( process.env.MODEL ? process.env.MODEL : "gpt-5-mini" );
+
 
 /*
  * ファイルはディスクに保存せず、メモリ上に保持する。
@@ -154,7 +156,7 @@ app.post("/api/completion", (req, res) => {
 
 function createTextOnlyRequest(prompt, previousResponseId) {
   const request = {
-    model: "gpt-5-mini",
+    model: llmModel,
     tools: [
       { type: "web_search" }
     ],
@@ -173,7 +175,7 @@ function createRequestWithFile(prompt, file, previousResponseId) {
   const base64Data = file.buffer.toString("base64");
 
   const request = {
-    model: "gpt-5-mini",
+    model: llmModel,
     tools: [
       { type: "web_search" }
     ],

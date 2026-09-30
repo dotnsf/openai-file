@@ -32,6 +32,9 @@ const openai = new OpenAI({
 
 const llmModel = ( process.env.MODEL ? process.env.MODEL : "gpt-5-mini" );
 
+const domainFilters = ( process.env.DOMAIN_FILTERS ? process.env.DOMAIN_FILTERS : null );
+const domainFilter = ( domainFilters ? domainFilters.split( "," ) : null );
+
 
 /*
  * ファイルはディスクに保存せず、メモリ上に保持する。
@@ -185,14 +188,15 @@ app.post("/api/completion", async (req, res) => {
      * input、previous_response_id、instructions、
      * reasoning、text、toolsなど、その他の項目は維持する。
      */
-    const openAIRequest = {
+    let openAIRequest = {
       ...request,
-      tools: [
-        { type: "web_search" }
-      ],
+      tools: [ { type: "web_search" } ],
       store: true,
       model: llmModel
     };
+    if( domainFilter ) {
+      openAIRequest.tools[0].domain_filter = domainFilter;
+    }
 
     /*
      * Responses APIを呼び出す。
@@ -214,17 +218,15 @@ app.post("/api/completion", async (req, res) => {
 });
 
 function createTextOnlyRequest(prompt, previousResponseId) {
-  const request = {
+  let request = {
     model: llmModel,
-    tools: [
-      { 
-        // domain_filter: [ "www.kwansei.ac.jp" ],  //. 複数指定可
-        type: "web_search", 
-      }
-    ],
+    tools: [ { type: "web_search" } ],
     input: prompt,
     store: true
   };
+  if( domainFilter ) {
+    request.tools[0].domain_filter = domainFilter;
+  }
   if( previousResponseId ) {
     request.previous_response_id = previousResponseId;
   }
@@ -236,14 +238,9 @@ function createRequestWithFile(prompt, file, previousResponseId) {
   const mimeType = file.mimetype || "application/octet-stream";
   const base64Data = file.buffer.toString("base64");
 
-  const request = {
+  let request = {
     model: llmModel,
-    tools: [
-      { 
-        // domain_filter: [ "www.kwansei.ac.jp" ],  //. 複数指定可
-        type: "web_search", 
-      }
-    ],
+    tools: [ { type: "web_search" } ],
     input: [
         {
             role: "user",
@@ -262,6 +259,9 @@ function createRequestWithFile(prompt, file, previousResponseId) {
     ],
     store: true
   };
+  if( domainFilter ) {
+    request.tools[0].domain_filter = domainFilter;
+  }
   if( previousResponseId ) {
     request.previous_response_id = previousResponseId;
   }

@@ -181,14 +181,16 @@ app.post("/api/completion", async (req, res) => {
     }
 
     /*
-     * このAPIでは利用モデルをgpt-5-miniに固定する。
-     *
      * クライアントからmodelが指定されても上書きする。
      * input、previous_response_id、instructions、
      * reasoning、text、toolsなど、その他の項目は維持する。
      */
     const openAIRequest = {
       ...request,
+      tools: [
+        { type: "web_search" }
+      ],
+      store: true,
       model: llmModel
     };
 
@@ -215,7 +217,10 @@ function createTextOnlyRequest(prompt, previousResponseId) {
   const request = {
     model: llmModel,
     tools: [
-      { type: "web_search" }
+      { 
+        // domain_filter: [ "www.kwansei.ac.jp" ],  //. 複数指定可
+        type: "web_search", 
+      }
     ],
     input: prompt,
     store: true
@@ -234,7 +239,10 @@ function createRequestWithFile(prompt, file, previousResponseId) {
   const request = {
     model: llmModel,
     tools: [
-      { type: "web_search" }
+      { 
+        // domain_filter: [ "www.kwansei.ac.jp" ],  //. 複数指定可
+        type: "web_search", 
+      }
     ],
     input: [
         {

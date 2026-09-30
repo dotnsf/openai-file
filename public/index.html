@@ -3,48 +3,53 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AI Chat</title>
+  <meta name="description" content="Responses API対応のファイル添付チャット">
+  <title>Pastel Chat</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <main class="app-shell">
-    <header class="app-header">
-      <div>
-        <p class="eyebrow">AI ASSISTANT</p>
-        <h1>AI Chat</h1>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">✦</span>
+        <div><h1>Pastel Chat</h1><p>ファイルについても質問できます</p></div>
       </div>
-      <button id="newChatButton" class="button button-secondary" type="button">新しいチャット</button>
+      <button id="newChatButton" class="button button-secondary" type="button">＋ 新しいチャット</button>
     </header>
 
-    <section id="chatMessages" class="chat-messages" aria-live="polite" aria-label="チャット履歴">
-      <div id="welcomeMessage" class="welcome-card">
-        <span class="welcome-icon">✦</span>
-        <h2>どのようなことをお手伝いしましょうか？</h2>
-        <p>メッセージを入力し、必要に応じてファイルを添付してください。</p>
-      </div>
-    </section>
+    <main id="chatHistory" class="chat-history" aria-live="polite" aria-label="チャット履歴">
+      <section class="welcome-card" id="welcomeCard">
+        <div class="welcome-icon" aria-hidden="true">💬</div>
+        <h2>こんにちは。何でも聞いてください。</h2>
+        <p>文章を入力するか、ファイルを添付して質問してください。</p>
+      </section>
+    </main>
 
-    <section class="composer" aria-label="メッセージ入力">
-      <label class="sr-only" for="promptInput">チャットメッセージ</label>
-      <textarea id="promptInput" rows="3" placeholder="メッセージを入力してください..." autocomplete="off"></textarea>
-
-      <div id="fileStatus" class="file-status" hidden>
-        <span aria-hidden="true">📎</span>
-        <span id="fileName"></span>
-      </div>
-
-      <div class="composer-actions">
-        <div class="file-actions">
-          <input id="fileInput" type="file" hidden>
-          <button id="attachButton" class="button button-secondary" type="button">ファイル添付</button>
-          <button id="clearFileButton" class="button button-ghost" type="button" disabled>ファイルクリア</button>
+    <footer class="composer-wrap">
+      <form id="chatForm" class="composer">
+        <div id="attachmentPreview" class="attachment-preview" hidden>
+          <span class="file-icon" aria-hidden="true">📎</span>
+          <div class="attachment-text"><strong id="fileName"></strong><small id="fileSize"></small></div>
+          <button id="removeFileButton" class="icon-button" type="button" aria-label="添付ファイルを削除">×</button>
         </div>
-        <button id="sendButton" class="button button-primary" type="button">送信</button>
-      </div>
-      <p class="hint">Enter で送信、Shift + Enter で改行</p>
-    </section>
-  </main>
+        <textarea id="messageInput" rows="3" placeholder="メッセージを入力してください…" aria-label="問い合わせ内容"></textarea>
+        <div class="composer-actions">
+          <label class="button button-ghost file-button" for="fileInput">📎 ファイル添付</label>
+          <input id="fileInput" type="file" hidden>
+          <span class="shortcut">Enterで送信・Shift+Enterで改行</span>
+          <div class="right-actions">
+            <button id="clearButton" class="button button-ghost" type="button">クリア</button>
+            <button id="sendButton" class="button button-primary" type="submit">送信 <span aria-hidden="true">➜</span></button>
+          </div>
+        </div>
+      </form>
+      <p class="notice">添付ファイルはBase64形式でAPIに送信されます。機密情報の取り扱いにご注意ください。</p>
+    </footer>
+  </div>
 
+  <div id="loadingOverlay" class="loading-overlay" hidden aria-live="assertive" aria-busy="true">
+    <div class="loading-card"><div class="spinner"></div><strong>回答を作成しています</strong><span>しばらくお待ちください…</span></div>
+  </div>
   <script src="app.js"></script>
 </body>
 </html>

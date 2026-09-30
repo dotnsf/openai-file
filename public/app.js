@@ -1,169 +1,96 @@
-const API_URL = "/api/completion";
 
-const chatMessages = document.getElementById("chatMessages");
-const welcomeMessage = document.getElementById("welcomeMessage");
-const promptInput = document.getElementById("promptInput");
-const fileInput = document.getElementById("fileInput");
-const attachButton = document.getElementById("attachButton");
-const clearFileButton = document.getElementById("clearFileButton");
-const sendButton = document.getElementById("sendButton");
-const newChatButton = document.getElementById("newChatButton");
-const fileStatus = document.getElementById("fileStatus");
-const fileName = document.getElementById("fileName");
+const API_URL = "https://openai-file.xx14ssrk7ur.jp-tok.codeengine.appdomain.cloud/api/completion";
+
+const elements = {
+  form: document.querySelector("#chatForm"), input: document.querySelector("#messageInput"),
+  history: document.querySelector("#chatHistory"), fileInput: document.querySelector("#fileInput"),
+  filePreview: document.querySelector("#attachmentPreview"), fileName: document.querySelector("#fileName"),
+  fileSize: document.querySelector("#fileSize"), removeFile: document.querySelector("#removeFileButton"),
+  clear: document.querySelector("#clearButton"), newChat: document.querySelector("#newChatButton"),
+  overlay: document.querySelector("#loadingOverlay"), send: document.querySelector("#sendButton")
+};
 
 let previousResponseId = null;
-let selectedFile = null;
-let isSending = false;
+let pendingFile = null;
+let busy = false;
 
-attachButton.addEventListener("click", () => fileInput.click());
-fileInput.addEventListener("change", handleFileSelection);
-clearFileButton.addEventListener("click", clearSelectedFile);
-sendButton.addEventListener("click", sendMessage);
-newChatButton.addEventListener("click", startNewChat);
+const formatBytes = bytes => bytes < 1024 ? `${bytes} B` : bytes < 1048576 ? `${(bytes/1024).toFixed(1)} KB` : `${(bytes/1048576).toFixed(1)} MB`;
 
-promptInput.addEventListener("keydown", (event) => {
-  if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
-    event.preventDefault();
-    sendMessage();
-  }
-});
-
-function handleFileSelection() {
-  selectedFile = fileInput.files[0] ?? null;
-  updateFileStatus();
+function setBusy(value) {
+  busy = value;
+  elements.overlay.hidden = !value;
+  elements.send.disabled = value;
+  elements.input.disabled = value;
+  elements.fileInput.disabled = value;
+  elements.newChat.disabled = value;
 }
-
-function clearSelectedFile() {
-  selectedFile = null;
-  fileInput.value = "";
-  updateFileStatus();
+function resetFile() {
+  pendingFile = null; elements.fileInput.value = ""; elements.filePreview.hidden = true;
 }
-
-function updateFileStatus() {
-  const hasFile = Boolean(selectedFile);
-  fileStatus.hidden = !hasFile;
-  fileName.textContent = hasFile ? selectedFile.name : "";
-  clearFileButton.disabled = !hasFile;
-}
-
-async function sendMessage() {
-  const prompt = promptInput.value.trim();
-  if (!prompt || isSending) return;
-
-  const fileForThisRequest = selectedFile;
-  removeWelcomeMessage();
-  addMessage("user", prompt, fileForThisRequest?.name);
-  promptInput.value = "";
-  clearSelectedFile();
-
-  const formData = new FormData();
-  formData.append("prompt", prompt);
-  if (fileForThisRequest) formData.append("file", fileForThisRequest);
-  if (previousResponseId) {
-    formData.append("previous_response_id", previousResponseId);
-  }
-
-  setSendingState(true);
-  const loadingMessage = addLoadingMessage();
-
-  try {
-    const response = await fetch(API_URL, {
-      method: "POST",
-      body: formData
-      // Content-Type は指定しません。ブラウザーが boundary を含む
-      // multipart/form-data ヘッダーを自動的に設定します。
-    });
-
-    let data;
-    try {
-      data = await response.json();
-    } catch {
-      throw new Error(`API から JSON ではない応答が返されました（HTTP ${response.status}）。`);
-    }
-
-    if (!response.ok) {
-      const apiMessage = data?.error?.message || data?.message;
-      throw new Error(apiMessage || `API リクエストに失敗しました（HTTP ${response.status}）。`);
-    }
-
-    if (!data.id || typeof data.output_text !== "string") {
-      throw new Error("API 応答に id または output_text がありません。");
-    }
-
-    previousResponseId = data.id;
-    loadingMessage.remove();
-    addMessage("assistant", data.output_text);
-  } catch (error) {
-    loadingMessage.remove();
-    addMessage("error", error instanceof Error ? error.message : "不明なエラーが発生しました。");
-  } finally {
-    setSendingState(false);
-    promptInput.focus();
-  }
-}
-
+function clearComposer() { elements.input.value = ""; resetFile(); elements.input.focus(); }
 function startNewChat() {
-  previousResponseId = null;
-  clearSelectedFile();
-  promptInput.value = "";
-  chatMessages.replaceChildren(welcomeMessage);
-  welcomeMessage.hidden = false;
-  promptInput.focus();
+  previousResponseId = null; clearComposer();
+  elements.history.innerHTML = `<section class="welcome-card" id="welcomeCard"><div class="welcome-icon">💬</div><h2>新しいチャットを開始しました</h2><p>メッセージを入力してください。</p></section>`;
 }
-
-function removeWelcomeMessage() {
-  if (welcomeMessage.isConnected) welcomeMessage.remove();
-}
-
-function addMessage(role, text, attachedFileName = null) {
+function addMessage(role, text, fileLabel = "", isError = false) {
+  document.querySelector("#welcomeCard")?.remove();
   const row = document.createElement("article");
-  row.className = `message-row ${role}`;
-
-  const bubble = document.createElement("div");
-  bubble.className = "message-bubble";
-
-  const label = document.createElement("div");
-  label.className = "message-label";
-  label.textContent = role === "user" ? "あなた" : role === "assistant" ? "AI" : "エラー";
-
-  const body = document.createElement("p");
-  body.textContent = text;
-
-  bubble.append(label, body);
-
-  if (attachedFileName) {
-    const attachment = document.createElement("div");
-    attachment.className = "message-attachment";
-    attachment.textContent = `📎 ${attachedFileName}`;
-    bubble.append(attachment);
+  row.className = `message ${role}${isError ? " error" : ""}`;
+  const avatar = document.createElement("div"); avatar.className = "avatar"; avatar.textContent = role === "user" ? "☺" : "✦";
+  const bubble = document.createElement("div"); bubble.className = "bubble"; bubble.textContent = text;
+  if (fileLabel) { const f = document.createElement("span"); f.className = "message-file"; f.textContent = `📎 ${fileLabel}`; bubble.appendChild(f); }
+  row.append(avatar, bubble); elements.history.appendChild(row); elements.history.scrollTop = elements.history.scrollHeight;
+}
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = () => reject(new Error("ファイルの読み込みに失敗しました。")); reader.readAsDataURL(file); });
+}
+function extractResponseText(data) {
+  if (typeof data?.output_text === "string" && data.output_text.trim()) return data.output_text;
+  const parts = [];
+  for (const item of data?.output ?? []) {
+    if (item?.type !== "message") continue;
+    for (const content of item.content ?? []) {
+      if (content?.type === "output_text" && typeof content.text === "string") parts.push(content.text);
+      if (content?.type === "refusal" && typeof content.refusal === "string") parts.push(content.refusal);
+    }
   }
-
-  row.append(bubble);
-  chatMessages.append(row);
-  scrollToBottom();
-  return row;
+  return parts.join("\n").trim();
+}
+function makePayload(text, fileData) {
+  const content = [];
+  if (fileData) content.push({ type: "input_file", filename: pendingFile.name, file_data: fileData });
+  content.push({ type: "input_text", text });
+  const payload = { input: [{ role: "user", content }] };
+  if (previousResponseId) payload.previous_response_id = previousResponseId;
+  return payload;
 }
 
-function addLoadingMessage() {
-  const row = document.createElement("article");
-  row.className = "message-row assistant";
-  row.setAttribute("aria-label", "AI が応答を生成中");
-  row.innerHTML = `
-    <div class="message-bubble loading-bubble">
-      <div class="message-label">AI</div>
-      <div class="typing-indicator" aria-hidden="true"><span></span><span></span><span></span></div>
-    </div>`;
-  chatMessages.append(row);
-  scrollToBottom();
-  return row;
+async function submitMessage(event) {
+  event.preventDefault(); if (busy) return;
+  const text = elements.input.value.trim();
+  if (!text) { elements.input.focus(); return; }
+  const selectedFile = pendingFile;
+  addMessage("user", text, selectedFile?.name || "");
+  clearComposer(); setBusy(true);
+  try {
+    const fileData = selectedFile ? await fileToDataUrl(selectedFile) : null;
+    if (selectedFile) pendingFile = selectedFile;
+    const response = await fetch(API_URL, { method: "POST", headers: { "Content-Type": "application/json", "Accept": "application/json" }, body: JSON.stringify(makePayload(text, fileData)) });
+    const raw = await response.text();
+    let data; try { data = raw ? JSON.parse(raw) : {}; } catch { throw new Error(`JSONではない応答が返されました（HTTP ${response.status}）。`); }
+    if (!response.ok) throw new Error(data?.error?.message || data?.message || `APIエラー（HTTP ${response.status}）`);
+    const answer = extractResponseText(data);
+    if (!answer) throw new Error("応答データから返答テキストを取得できませんでした。");
+    if (typeof data.id === "string" && data.id) previousResponseId = data.id;
+    addMessage("assistant", answer);
+  } catch (error) {
+    addMessage("assistant", `エラー: ${error.message}`, "", true);
+  } finally { pendingFile = null; setBusy(false); elements.input.focus(); }
 }
 
-function setSendingState(sending) {
-  isSending = sending;
-  sendButton.disabled = sending;
-  sendButton.textContent = sending ? "送信中..." : "送信";
-}
-
-function scrollToBottom() {
-  chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: "smooth" });
-}
+elements.form.addEventListener("submit", submitMessage);
+elements.input.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); elements.form.requestSubmit(); } });
+elements.fileInput.addEventListener("change", () => { pendingFile = elements.fileInput.files[0] || null; if (!pendingFile) return resetFile(); elements.fileName.textContent = pendingFile.name; elements.fileSize.textContent = formatBytes(pendingFile.size); elements.filePreview.hidden = false; });
+elements.removeFile.addEventListener("click", resetFile);
+elements.clear.addEventListener("click", clearComposer);
+elements.newChat.addEventListener("click", startNewChat);

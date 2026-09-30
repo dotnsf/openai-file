@@ -55,7 +55,7 @@ paths:
           description: 成功
         '400':
           description: エラー
-  /completion:
+  /complete:
     post:
       tags:
         - openai
@@ -85,3 +85,77 @@ paths:
           description: エラー
         '429':
           description: Too many requests
+  /completion:
+    post:
+      tags:
+        - openai
+      summary: Analyse with file(OpenAI Compatible)
+      description: Analyse with file(OpenAI Compatible)
+      parameters:
+        - in: body
+          name: request
+          required: true
+          schema:
+            $ref: "#/definitions/ResponseRequest"
+      responses:
+        '200':
+          description: 成功
+          schema:
+            $ref: "#/definitions/OpenAIResponse"
+          examples:
+            application/json:
+              id: "resp_xxxxxxxxx"
+              object: response
+              status: completed
+              model: "gpt-5-mini"
+              output_text: |
+                This is the generated text.
+        '400':
+          description: エラー
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+          examples:
+            application/json:
+              error:
+                message: "Invalid request"
+                type: "invalid_request_error"
+        '500':
+          description: OpenAI API error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+definitions:
+  ResponseRequest:
+    type: object
+    additionalProperties: true
+    required:
+      - input
+  OpenAIResponse:
+    type: object
+    description: OpenAI API Response
+    properties:
+      id:
+        type: string
+      object:
+        type: string
+      status:
+        type: string
+      model:
+        type: string
+      output:
+        type: array
+        items:
+          type: object
+      output_text:
+        type: string
+      usage:
+        type: object
+  ErrorResponse:
+    type: object
+    properties:
+      error:
+        type: object
+        properties:
+          message:
+            type: string
+          type:
+            type: string

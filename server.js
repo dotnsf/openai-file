@@ -48,6 +48,10 @@ const upload = multer({
   }
 });
 
+app.use( express.json({
+  limit: "50mb"
+}));
+
 /*
  * CORS=true の場合だけCORSヘッダーを追加する。
  *
@@ -99,7 +103,7 @@ app.get( '/api/model/:id', async function( req, res ){
   res.end();
 });
 
-app.post("/api/completion", (req, res) => {
+app.post("/api/complete", (req, res) => {
   upload.single("file")(req, res, async (uploadError) => {
     if (uploadError) {
       return handleUploadError(uploadError, res);
@@ -152,6 +156,59 @@ app.post("/api/completion", (req, res) => {
       return handleOpenAIError(error, res);
     }
   });
+});
+
+app.post("/api/completion", async (req, res) => {
+  try {
+    /*
+     * リクエストボディはOpenAI Responses APIと同じ形式で
+     * application/jsonとして送信される。
+     */
+    const request = req.body;
+
+    if (
+      !request ||
+      typeof request !== "object" ||
+      Array.isArray(request)
+    ) {
+      return res.status(400).json({
+        error: {
+          type: "invalid_request",
+          message:
+            "The request body must be a JSON object."
+        }
+      });
+    }
+
+    /*
+     * このAPIでは利用モデルをgpt-5-miniに固定する。
+     *
+     * クライアントからmodelが指定されても上書きする。
+     * input、previous_response_id、instructions、
+     * reasoning、text、toolsなど、その他の項目は維持する。
+     */
+    const openAIRequest = {
+      ...request,
+      model: llmModel
+    };
+
+    /*
+     * Responses APIを呼び出す。
+     */
+    const response =
+      await openai.responses.create(openAIRequest);
+
+    /*
+     * OpenAI Responses APIのレスポンスを加工せず、
+     * application/jsonとしてそのまま返す。
+     */
+    return res
+      .status(200)
+      .type("application/json")
+      .send(JSON.stringify(response));
+  } catch (error) {
+    return handleOpenAIError(error, res);
+  }
 });
 
 function createTextOnlyRequest(prompt, previousResponseId) {

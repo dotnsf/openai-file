@@ -195,7 +195,8 @@ app.post("/api/completion", async (req, res) => {
       model: llmModel
     };
     if( domainFilter && domainFilter.length > 0 ) {
-      openAIRequest.tools[0].domain_filter = domainFilter;
+      openAIRequest.tools[0].filters = {};
+      openAIRequest.tools[0].filters.allowed_domains = domainFilter;
     }
 
     /*
@@ -203,6 +204,16 @@ app.post("/api/completion", async (req, res) => {
      */
     const response =
       await openai.responses.create(openAIRequest);
+
+    /*
+    OpenAI API error: BadRequestError: 400 Unknown parameter: 'tools[0].domain_filter'.
+    at APIError.generate (file:///home/dotnsf/src/openai-file/node_modules/openai/core/error.mjs:41:20)
+    at OpenAI.makeStatusError (file:///home/dotnsf/src/openai-file/node_modules/openai/client.mjs:408:32)
+    at OpenAI.makeRequest (file:///home/dotnsf/src/openai-file/node_modules/openai/client.mjs:882:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async file:///home/dotnsf/src/openai-file/server.js:206:7 {
+    */
+
 
     /*
      * OpenAI Responses APIのレスポンスを加工せず、
@@ -225,7 +236,8 @@ function createTextOnlyRequest(prompt, previousResponseId) {
     store: true
   };
   if( domainFilter && domainFilter.length > 0 ) {
-    request.tools[0].domain_filter = domainFilter;
+    request.tools[0].filters = {};
+    request.tools[0].filters.allowed_domains = domainFilter;
   }
   if( previousResponseId ) {
     request.previous_response_id = previousResponseId;
@@ -260,7 +272,8 @@ function createRequestWithFile(prompt, file, previousResponseId) {
     store: true
   };
   if( domainFilter && domainFilter.length > 0 ) {
-    request.tools[0].domain_filter = domainFilter;
+    request.tools[0].filters = {};
+    request.tools[0].filters.allowed_domains = domainFilter;
   }
   if( previousResponseId ) {
     request.previous_response_id = previousResponseId;

@@ -194,7 +194,7 @@ app.post("/api/completion", async (req, res) => {
       store: true,
       model: llmModel
     };
-    if( domainFilter ) {
+    if( domainFilter && domainFilter.length > 0 ) {
       openAIRequest.tools[0].domain_filter = domainFilter;
     }
 
@@ -224,7 +224,7 @@ function createTextOnlyRequest(prompt, previousResponseId) {
     input: prompt,
     store: true
   };
-  if( domainFilter ) {
+  if( domainFilter && domainFilter.length > 0 ) {
     request.tools[0].domain_filter = domainFilter;
   }
   if( previousResponseId ) {
@@ -259,7 +259,7 @@ function createRequestWithFile(prompt, file, previousResponseId) {
     ],
     store: true
   };
-  if( domainFilter ) {
+  if( domainFilter && domainFilter.length > 0 ) {
     request.tools[0].domain_filter = domainFilter;
   }
   if( previousResponseId ) {

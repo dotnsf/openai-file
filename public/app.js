@@ -1,6 +1,6 @@
 
-//const API_URL = "https://openai-file.xx14ssrk7ur.jp-tok.codeengine.appdomain.cloud/api/completion";
-const API_URL = "/api/completion";
+const API_URL = "https://openai-file.xx14ssrk7ur.jp-tok.codeengine.appdomain.cloud/api/completion";
+//const API_URL = "/api/completion";
 
 const elements = {
   form: document.querySelector("#chatForm"), input: document.querySelector("#messageInput"),
